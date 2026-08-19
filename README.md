@@ -140,16 +140,3 @@ ruff check src/
 # Type check
 mypy src/
 ```
-
-## Senior Engineer Practices Applied
-
-- **Single Responsibility**: Each module has one job (Repository, Retrieval, DDL, Config)
-- **Dependency Injection**: `Database`, `Repository`, `RetrievalGate` accept dependencies
-- **Protocol Interfaces**: Abstract base for swappable backends
-- **Config via Environment**: No hardcoded values; all via `pydantic-settings`
-- **Structured Logging**: JSON with context; `warning` for recoverable, `exception` on caught errors
-- **Custom Exceptions**: Typed error hierarchy for clear handling
-- **Validation at Boundaries**: Pydantic schemas for API, not just data carriers
-- **YAGNI**: No Phase 3/4 code yet; only what's needed for Phase 1-2
-- **Immutable Results**: `frozen=True` dataclasses for context blocks
-- **Timezone-aware**: `datetime.now(timezone.utc)` throughout
