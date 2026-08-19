@@ -4,8 +4,6 @@ from sqlalchemy.engine import Engine
 from .models import SemanticMemory
 
 
-PRAGMA_DDL = DDL("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA synchronous=NORMAL")
-
 FTS5_CREATE = DDL("""
     CREATE VIRTUAL TABLE IF NOT EXISTS semantic_memory_fts USING fts5(
         fact, content='semantic_memory', content_rowid='id'
