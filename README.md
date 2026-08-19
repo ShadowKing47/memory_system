@@ -7,6 +7,7 @@ Production-grade memory system for AI agents with SQLite + FTS5 backend.
 - **Phase 1**: Semantic Memory Storage (SQLite + FTS5) - ✅ Complete
 - **Phase 2**: Retrieval Gate (Hybrid Search) - ✅ Complete
 - **Phase 3**: Memory Maintenance & Dreaming - ⏳ Planned
+- **Phase 4**: CLI Tool Integration (Typer + Rich) - ⏳ Planned
 - **Evaluation & Observability** - ⏳ Planned
 
 ## Quick Start
@@ -16,41 +17,82 @@ Production-grade memory system for AI agents with SQLite + FTS5 backend.
 pip install -r requirements.txt
 
 # Run demo
-PYTHONPATH=src python -m memory.main
+python main.py
 ```
 
 ## Project Structure
 
 ```
-src/memory/
-├── __init__.py      # Public API
-├── models.py        # SQLAlchemy ORM models
-├── database.py      # Connection & schema management
-├── repository.py    # CRUD operations (Repository pattern)
-├── retrieval.py     # Retrieval Gate (Phase 2)
-└── main.py          # Demo / usage example
+├── config.py              # Pydantic Settings (env-driven)
+├── main.py                # Demo / usage example
+├── requirements.txt       # Pinned dependencies
+├── pyproject.toml         # Modern packaging + tool config
+├── .env                   # Local environment (gitignored)
+├── .env.example           # Template for environment variables
+├── src/memory/
+│   ├── __init__.py        # Public API exports
+│   ├── models.py          # SQLAlchemy ORM models
+│   ├── database.py        # Connection & schema management
+│   ├── ddl.py             # FTS5 DDL + triggers via SQLAlchemy events
+│   ├── repository.py      # CRUD operations (Repository pattern)
+│   ├── retrieval.py       # Retrieval Gate (Phase 2)
+│   ├── schemas.py         # Pydantic validation models
+│   ├── protocols.py       # Abstract interfaces (Protocol)
+│   ├── exceptions.py      # Custom exception hierarchy
+│   └── logging.py         # Structured JSON logging
+├── tests/
+│   ├── conftest.py        # Shared fixtures
+│   ├── test_config.py     # Settings validation
+│   ├── test_repository.py # CRUD + FTS tests
+│   └── test_retrieval.py  # Retrieval Gate tests
+└── trash/                 # Archive (gitignored)
 ```
+
+## Configuration
+
+All settings via `.env` (see `.env.example`):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_PATH` | `state.db` | SQLite database file path |
+| `LOG_LEVEL` | `INFO` | Logging level |
+| `FTS5_QUERY_LIMIT` | `10` | Max FTS5 search results |
+| `RETRIEVAL_KEYWORD_LIMIT` | `5` | Keyword search limit |
+| `RETRIEVAL_RECENT_LIMIT` | `10` | Recent facts limit |
 
 ## Usage
 
 ```python
-from memory import Database, RetrievalGate
+from memory import (
+    Database,
+    RetrievalGate,
+    SemanticMemoryCreate,
+    SemanticMemoryUpdate,
+    create_database,
+    create_retrieval_gate,
+    get_settings,
+)
 
-db = Database("state.db")
+# Initialize with settings from .env
+settings = get_settings()
+db = create_database(settings)
 
-# Add facts
+# Add facts (validated via Pydantic)
 with db.session() as session:
-    repo = MemoryRepository(session)
-    repo.add_fact("user", "User prefers dark mode")
-    repo.add_fact("project", "Uses Python 3.11")
+    from memory import create_repository
+    repo = create_repository(session)
 
-# Supersede (invalidates old, adds new)
-repo.supersede_fact("user", "User prefers light mode")
+    repo.add_fact(SemanticMemoryCreate(entity="user", fact="User prefers dark mode", source="preferences"))
+    repo.add_fact(SemanticMemoryCreate(entity="user", fact="User works as a software engineer", source="profile"))
+    repo.add_fact(SemanticMemoryCreate(entity="project", fact="Project uses Python 3.11", source="config"))
 
-# Retrieve context for LLM
-gate = RetrievalGate(db)
-context = gate.build_context("What does the user prefer?")
-# Returns formatted context block for prompt injection
+    # Supersede (invalidates old, adds new with valid_to timestamp)
+    repo.supersede_fact("user", SemanticMemoryUpdate(fact="User prefers light mode", source="preferences_updated"))
+
+# Retrieve context for LLM prompt injection
+gate = create_retrieval_gate(db)
+context = gate.build_context("user prefers")
+# Returns formatted context block
 
 # Search API
 results = gate.search("Python", limit=5)
@@ -59,10 +101,16 @@ results = gate.search("Python", limit=5)
 ## Features
 
 - **Valid-time semantics**: `valid_from` / `valid_to` for fact supersession
-- **FTS5 full-text search**: Keyword search with ranking
-- **Auto-sync triggers**: FTS5 index maintained via SQLite triggers
+- **FTS5 full-text search**: Keyword search with ranking (BM25)
+- **Auto-sync triggers**: FTS5 index maintained via SQLite triggers (INSERT/UPDATE/DELETE)
 - **Repository pattern**: Clean separation of data access
-- **Retrieval Gate**: Priority-based context building
+- **Retrieval Gate**: Priority-based context building (keyword match > recent)
+- **Pydantic validation**: Input/output validation via `SemanticMemoryCreate`, `SemanticMemoryRead`, etc.
+- **Structured logging**: JSON logs with context (entity, fact_id, query)
+- **Custom exceptions**: `DatabaseError`, `RetrievalError`, `NotFoundError`, `ValidationError`
+- **Protocol interfaces**: `MemoryRepositoryProtocol`, `RetrievalProtocol` for swappability
+- **Config-driven**: All limits via `Settings` from `.env`
+- **Testable**: Factory functions (`create_repository`, `create_database`, `create_retrieval_gate`)
 
 ## Requirements
 
@@ -73,5 +121,35 @@ results = gate.search("Python", limit=5)
 ## Testing
 
 ```bash
-PYTHONPATH=src python -m memory.main
+# Run all tests
+PYTHONPATH=src python -m pytest tests/ -v
+
+# Run specific test file
+PYTHONPATH=src python -m pytest tests/test_repository.py -v
 ```
+
+## Development
+
+```bash
+# Install with dev dependencies
+pip install -e ".[dev]"
+
+# Lint
+ruff check src/
+
+# Type check
+mypy src/
+```
+
+## Senior Engineer Practices Applied
+
+- **Single Responsibility**: Each module has one job (Repository, Retrieval, DDL, Config)
+- **Dependency Injection**: `Database`, `Repository`, `RetrievalGate` accept dependencies
+- **Protocol Interfaces**: Abstract base for swappable backends
+- **Config via Environment**: No hardcoded values; all via `pydantic-settings`
+- **Structured Logging**: JSON with context; `warning` for recoverable, `exception` on caught errors
+- **Custom Exceptions**: Typed error hierarchy for clear handling
+- **Validation at Boundaries**: Pydantic schemas for API, not just data carriers
+- **YAGNI**: No Phase 3/4 code yet; only what's needed for Phase 1-2
+- **Immutable Results**: `frozen=True` dataclasses for context blocks
+- **Timezone-aware**: `datetime.now(timezone.utc)` throughout
