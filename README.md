@@ -256,18 +256,6 @@ ruff check src/
 mypy src/
 ```
 
-## Senior Engineer Practices Applied
-
-- **Single Responsibility**: Each module has one job
-- **Dependency Injection**: `Database`, `Repository`, `RetrievalGate`, `DreamingWorker` accept dependencies
-- **Protocol Interfaces**: Abstract base for swappable backends (`LLMClientProtocol`, `MemoryRepositoryProtocol`)
-- **Config via Environment**: No hardcoded values; all via `pydantic-settings`
-- **Structured Logging**: JSON with context; `warning` for recoverable, `exception` on caught errors
-- **Custom Exceptions**: Typed error hierarchy for clear handling
-- **Validation at Boundaries**: Pydantic schemas for API, not just data carriers
-- **YAGNI**: No Phase 4 code yet; only what's needed for Phase 1-3
-- **Immutable Results**: `frozen=True` dataclasses for context blocks, results
-- **Timezone-aware**: `datetime.now(timezone.utc)` throughout
-- **Prompt Versioning**: Git-trackable `.txt` templates, no code deployment for prompt changes
+*: Git-trackable `.txt` templates, no code deployment for prompt changes
 - **Retry Logic**: Exponential backoff with `tenacity`, circuit-breaker patterns
 - **Async-First**: No blocking calls, `asyncio` native, no thread pools
