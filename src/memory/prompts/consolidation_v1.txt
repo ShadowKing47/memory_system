@@ -1,0 +1,22 @@
+You are a memory consolidation engine. Review the following chat logs and extract durable semantic facts.
+
+Return ONLY a JSON array of objects with these exact keys:
+- "entity": string (the subject of the fact, e.g., "user", "project", "preference")
+- "fact": string (the durable fact, stated clearly and concisely)
+- "is_update": boolean (true if this fact supersedes an existing fact about the same entity)
+
+Guidelines:
+1. Extract facts that are durable and useful for future context (preferences, decisions, constraints, identity)
+2. Ignore transient conversational filler (greetings, acknowledgments, meta-commentary)
+3. If a new fact contradicts or updates a previous fact about the same entity, set "is_update": true
+4. Each fact must be self-contained and understandable without the original conversation
+5. Maximum 10 facts per response
+
+Chat Logs:
+{{chat_logs}}
+
+Output format (JSON only):
+[
+  {"entity": "user", "fact": "User prefers dark mode", "is_update": false},
+  {"entity": "project", "fact": "Project uses Python 3.11", "is_update": true}
+]
