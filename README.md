@@ -7,7 +7,7 @@ Production-grade memory system for AI agents with SQLite + FTS5 backend.
 - **Phase 1**: Semantic Memory Storage (SQLite + FTS5) - ✅ Complete
 - **Phase 2**: Retrieval Gate (Hybrid Search) - ✅ Complete
 - **Phase 3**: Memory Maintenance & Dreaming - ✅ Complete
-- **Phase 4**: CLI Tool Integration (Typer + Rich) - ⏳ Planned
+- **Phase 4**: CLI Tool Integration (Typer + Rich) - ✅ Complete
 - **Evaluation & Observability** - ⏳ Planned
 
 ## Quick Start
@@ -50,6 +50,9 @@ PYTHONPATH=src python -m pytest tests/ -v
 │   ├── episodic.py        # EpisodicLog model + repository (Phase 3)
 │   ├── worker.py          # Async DreamingWorker (Phase 3)
 │   ├── maintenance.py     # MemoryMaintenance facade (Phase 3)
+│   ├── cli/               # CLI commands (Phase 4)
+│   │   ├── __init__.py
+│   │   └── main.py        # Typer app with all commands
 │   ├── llm/
 │   │   ├── __init__.py
 │   │   ├── protocol.py    # LLMClientProtocol, LLMResponse
@@ -223,7 +226,14 @@ with db.session() as session:
 - **Deduplication & validation**: Pydantic validation at boundaries
 - **Observability**: Consolidation stats (runs, facts, errors, duration)
 
-## Requirements
+### Phase 4: CLI Tool Integration
+- **Typer + Rich**: Modern CLI framework with beautiful output
+- **Full CRUD**: Add, list, search, supersede, delete semantic facts
+- **Episodic logs**: Log and list interaction sessions
+- **Consolidation**: Manual trigger and background worker control
+- **Rich tables & JSON**: Human-readable tables or `--json` for scripting
+- **Context building**: One-shot context blocks for LLM prompt injection
+- **Database stats**: Overview of facts, sessions, and logs
 
 - Python 3.11+
 - SQLAlchemy 2.0+
@@ -241,6 +251,50 @@ PYTHONPATH=src python -m pytest tests/test_repository.py -v
 
 # Run Phase 3 tests
 PYTHONPATH=src python -m pytest tests/test_prompts.py tests/test_consolidation.py tests/test_episodic.py tests/test_worker.py -v
+
+# Run CLI tests
+PYTHONPATH=src python -m pytest tests/test_cli.py -v
+```
+
+## CLI Usage (Phase 4)
+
+The CLI provides a `memory` command with subcommands for all memory operations.
+
+```bash
+# Install CLI dependencies
+pip install typer rich
+
+# Run CLI (help)
+python -m memory.cli --help
+
+# Semantic facts
+memory add user "User prefers dark mode" --source preferences
+memory list                    # list all valid facts
+memory list user               # list facts for entity
+memory list --all              # include superseded facts
+memory search "Python"         # keyword search
+memory context "user prefers"  # build context for LLM
+memory supersede user "User prefers light mode" --source updated
+memory delete 5                # delete fact by ID
+
+# Episodic logs
+memory log session-123 user "I prefer dark mode"
+memory log session-123 assistant "Noted!"
+memory log-list                # all recent logs
+memory log-list session-123    # logs for specific session
+
+# Consolidation & Worker
+memory consolidate --session session-123
+memory worker-start            # start background worker (Ctrl+C to stop)
+memory worker-status           # show worker stats
+
+# Database stats
+memory stats
+
+# JSON output for scripting
+memory list --json
+memory stats --json
+memory search "Python" --json
 ```
 
 ## Development

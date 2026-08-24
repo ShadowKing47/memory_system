@@ -1,4 +1,4 @@
-from config import Settings, get_settings, ensure_db_dir
+from .config import Settings, get_settings, ensure_db_dir
 from .consolidation import ConsolidationResult, ConsolidatedFact, consolidate_session
 from .database import Database, create_database
 from .ddl import setup_ddl_listeners, setup_engine_pragmas

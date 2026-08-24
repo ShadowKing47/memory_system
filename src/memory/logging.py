@@ -4,7 +4,7 @@ from typing import Any
 
 from pythonjsonlogger import jsonlogger
 
-from config import get_settings
+from memory.config import get_settings
 
 
 class StructuredLogger:
