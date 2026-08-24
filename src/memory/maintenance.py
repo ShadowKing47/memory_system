@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from config import Settings, get_settings
+from .config import Settings, get_settings
 from .database import Database
 from .worker import DreamingWorker, ConsolidationStats
 from .consolidation import ConsolidationResult

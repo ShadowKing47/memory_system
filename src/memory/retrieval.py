@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from config import get_settings
+from memory.config import get_settings
 from .database import Database
 from .exceptions import RetrievalError
 from .logging import get_logger

@@ -4,7 +4,7 @@ from typing import Optional
 from sqlalchemy import select, text, update
 from sqlalchemy.orm import Session
 
-from config import get_settings
+from memory.config import get_settings
 from .exceptions import DatabaseError, NotFoundError
 from .logging import get_logger
 from .models import SemanticMemory
@@ -117,6 +117,19 @@ class MemoryRepository:
                     select(SemanticMemory)
                     .where(SemanticMemory.valid_to.is_(None))
                     .limit(limit)
+                ).scalars().all()
+            )
+            return [SemanticMemoryRead.model_validate(m) for m in memories]
+        except Exception as e:
+            self._logger.exception("get_all_facts_failed", error=str(e))
+            raise DatabaseError("Failed to get all facts", e) from e
+
+    def get_all_facts(self, limit: int | None = None) -> list[SemanticMemoryRead]:
+        limit = limit or self._settings.retrieval_recent_limit
+        try:
+            memories = list(
+                self._session.execute(
+                    select(SemanticMemory).limit(limit)
                 ).scalars().all()
             )
             return [SemanticMemoryRead.model_validate(m) for m in memories]

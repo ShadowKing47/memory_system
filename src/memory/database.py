@@ -4,7 +4,7 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from config import Settings, ensure_db_dir
+from memory.config import Settings, ensure_db_dir
 from .ddl import setup_ddl_listeners, setup_engine_pragmas
 from .logging import get_logger
 from .models import Base

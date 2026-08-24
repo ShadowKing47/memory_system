@@ -3,7 +3,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
-from config import Settings
+from memory.config import Settings
 from .database import Database
 from .llm.client import OpenRouterClient
 from .llm.protocol import LLMClientProtocol
